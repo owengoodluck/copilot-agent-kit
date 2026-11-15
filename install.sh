@@ -2,19 +2,21 @@
 # Install 5 files into a project: AGENTS.md, 3 agents, PR template.
 #
 #   ./install.sh /path/to/project                 skip files that already exist
-#   ./install.sh /path/to/project --force         overwrite existing files
+#   ./install.sh /path/to/project --force         overwrite the role layer; keeps a filled AGENTS.md
 #   ./install.sh /path/to/project --agents-only   refresh only the 3 agents
 #   ./install.sh /path/to/project --prefix=repo   install as repo-planner / repo-implementer / ...
+#   ./install.sh /path/to/project --force-facts   also overwrite AGENTS.md (destroys hand-written text)
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-TARGET=""; FORCE=0; AGENTS_ONLY=0; PREFIX=""
+TARGET=""; FORCE=0; FORCE_FACTS=0; AGENTS_ONLY=0; PREFIX=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --force) FORCE=1 ;;
+    --force-facts) FORCE_FACTS=1 ;;
     --agents-only) AGENTS_ONLY=1 ;;
     --prefix=*) PREFIX="${1#--prefix=}" ;;
-    -h|--help) sed -n '2,7p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,8p' "${BASH_SOURCE[0]}"; exit 0 ;;
     -*) echo "Unknown option: $1" >&2; exit 2 ;;
     *) TARGET="$1" ;;
   esac
@@ -76,6 +78,14 @@ while IFS= read -r rel; do
   fi
 
   dest="$TARGET/$destrel"
+
+  # AGENTS.md is the one file no script can regenerate: its two hand-written sections exist nowhere
+  # else. --force is meant for the role layer, so it must not be able to delete weeks of writing.
+  if [ "$rel" = "AGENTS.md" ] && [ -f "$dest" ] && [ "$FORCE_FACTS" -eq 0 ]; then
+    printf '%-16s %s\n' "kept" "$destrel (hand-written; --force-facts to replace)"
+    skipped=$((skipped+1)); continue
+  fi
+
   if [ -f "$dest" ] && [ "$FORCE" -eq 0 ]; then
     printf '%-16s %s\n' "skipped" "$destrel"; skipped=$((skipped+1)); continue
   fi

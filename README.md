@@ -49,8 +49,20 @@ of agents works across all your projects and all project differences live in the
 ```
 
 Five files go in — the `templates/` tree above, nothing else. Existing files are skipped by default,
-so your edits survive; `--force` overwrites. To refresh the role layer across projects:
-`./install.sh <project> --agents-only --force`.
+so your edits survive. `--force` refreshes the role layer and **never** replaces a filled `AGENTS.md`:
+that file holds the two hand-written sections, and nothing can regenerate them (`--force-facts` is the
+only way in). To refresh the role layer across projects: `./install.sh <project> --agents-only --force`.
+
+**Nothing fills `AGENTS.md` for you.** `install.sh` copies the template, square brackets and all;
+`scan.sh` prints a draft to stdout and never writes a file. The split is deliberate:
+
+| Part of `AGENTS.md` | Filled by | Why |
+|---|---|---|
+| Stack, commands, forbidden paths, directory map | you paste from `scan.sh` output | mechanical, but a candidate command still has to be executed once |
+| Architecture invariants, prohibition boundaries | you, by hand | invisible in the code; a wrong guess misleads every agent for months |
+
+If you never fill it, the template stays recognisable on purpose: `planner` opens its answer with
+"fact layer missing, the following is inferred from code" instead of pretending to know the architecture.
 
 ## If the project already has agents
 
