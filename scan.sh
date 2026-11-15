@@ -319,3 +319,45 @@ One sentence on who may call whom, in a form a **linter could enforce**:
 **Next step**: paste sections 1-5 into the matching parts of `AGENTS.md`, **execute** every command
 from section 2 to confirm it works, and write section 6 by hand.
 EOF
+
+# ---------------------------------------------------------------- 7. existing fact layer
+# An AGENTS.md that is already there belongs to whoever wrote it: it is loaded by other tools, read
+# by other people, and may encode decisions nobody wrote down anywhere else. The only safe operation
+# is to add what is missing.
+if [ -f AGENTS.md ]; then
+  sec "7. Existing AGENTS.md (merge, do not replace)"
+  printf 'Found `AGENTS.md`, %s lines. Add the missing blocks to it and keep the existing wording.\n' "$(wc -l < AGENTS.md | tr -d ' ')"
+  printf 'Replacing it throws away conventions that are enforced by habit, not by code.\n\n'
+
+  printf '| Required block | Status | Detected via |\n| --- | --- | --- |\n'
+  # Plain ERE only: BSD grep on macOS does not honour \b, and a pattern that silently never matches
+  # reports every block as "missing" — wrong in the most expensive direction.
+  chk() {
+    if grep -qiE "$2" AGENTS.md 2>/dev/null; then
+      printf '| %s | present | `%s` |\n' "$1" "$3"
+    else
+      printf '| %s | **missing** | `%s` |\n' "$1" "$3"
+    fi
+  }
+  chk "Stack and shape"      '^#{1,3}.*(stack|tech|技术栈)|^[-*][[:space:]]*stack'  'heading or Stack line'
+  chk "Commands"             '^#{1,3}.*(command|命令|build|test|verif)'              'heading'
+  chk "Directory map"        '^#{1,3}.*(director|layout|structure|目录|地图|结构)'   'heading'
+  chk "Architecture invariants" '^#{1,3}.*(invariant|architectur|layer|boundar|不变量|架构|分层)' 'heading'
+  chk "Forbidden actions"    '^#{1,3}.*(forbidden|prohibit|never|禁止|不可|不要)'    'heading'
+
+  PLACEHOLDER=$(awk '/\[[^]]+\]/ && !/\]\(/' AGENTS.md 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$PLACEHOLDER" -gt 0 ]; then
+    printf '\n> **%s lines still contain square-bracket placeholders.** The file exists but is not filled in.\n' "$PLACEHOLDER"
+    printf '> Agents reading it will treat those lines as content; fill or delete every one.\n'
+  else
+    printf '\n> No square-bracket placeholders left — this file looks filled in.\n'
+  fi
+
+  cat <<'EOF'
+
+**Merge rule**: keep what is there, add only the missing blocks, and delete one of any two
+paragraphs that say the same thing. Two phrasings of one rule means the next edit updates only
+one of them, and the file starts lying. Two pages is still the ceiling — if the merge pushes past
+it, the existing file was carrying detail that belongs in `docs/`.
+EOF
+fi

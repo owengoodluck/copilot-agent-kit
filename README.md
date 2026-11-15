@@ -64,6 +64,12 @@ only way in). To refresh the role layer across projects: `./install.sh <project>
 If you never fill it, the template stays recognisable on purpose: `planner` opens its answer with
 "fact layer missing, the following is inferred from code" instead of pretending to know the architecture.
 
+**If `AGENTS.md` already exists, merge — never replace.** `scan.sh` prints a gap check as its last
+section: which of the five required blocks are missing, and whether square-bracket placeholders are
+still in there. Add only what is missing, keep the existing wording even when you would have phrased
+it differently, and delete one of any two paragraphs that say the same thing. That file may already be
+loaded by other tools and may encode habits nobody wrote down anywhere else.
+
 ## If the project already has agents
 
 Real repositories usually do: a hand-written `plan` agent, a `.cursor/rules` folder, a `CLAUDE.md`,
@@ -101,8 +107,9 @@ bash scan.sh /path/to/your-project > /tmp/facts.md
 
 Six sections: stack and package-manager detection (a multiple-lockfile warning fires, since that is
 the number one cause of wrong commands), candidate commands (from `package.json` scripts, Makefile,
-CI config), existing constraint configs, forbidden zones, a directory map, and finally **three
-questions only you can answer**.
+CI config), an inventory of agent and instruction files already present, existing constraint configs,
+forbidden zones, a directory map, and finally **three questions only you can answer**. A seventh
+section appears only when `AGENTS.md` already exists — the gap check described above.
 
 If something cannot be detected it prints "none found" rather than inventing a plausible command.
 
