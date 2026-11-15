@@ -195,6 +195,46 @@ if [ "$FACT" -gt 1 ]; then
   printf '> never copies — a copy is a fork, and forks drift.\n'
 fi
 
+if [ -d .github/instructions ]; then
+  printf '\nPath-scoped rules in `.github/instructions/` — `applyTo` decides whether a file loads at all:\n\n'
+  printf '| File | applyTo | Verdict |\n'
+  printf '| --- | --- | --- |\n'
+  I=0; NOWIDE=0; WIDE=0; BADNAME=0
+  find .github/instructions -type f -name '*.md' | sort | while IFS= read -r f; do
+    scope=$(awk '
+      /^---[[:space:]]*$/ { c++; if (c == 2) exit; next }
+      c == 1 && /^applyTo:/ { sub(/^applyTo:[[:space:]]*/, ""); print; exit }
+    ' "$f" | tr -d '"' | tr -d "'")
+    case "$(basename "$f")" in
+      *.instructions.md) suffix_ok=1 ;;
+      *) suffix_ok=0 ;;
+    esac
+    if [ "$suffix_ok" -eq 0 ]; then
+      verdict='**wrong suffix** — never read unless it ends in `.instructions.md`'
+    elif [ -z "$scope" ]; then
+      verdict='**ignored — no `applyTo`**'
+    else
+      case "$scope" in
+        '**'|'**/*') verdict='**repo-wide in disguise** — this is a second fact layer' ;;
+        *) verdict='scoped' ;;
+      esac
+    fi
+    if [ -n "$scope" ]; then scope_cell="\`$scope\`"; else scope_cell='—'; fi
+    printf '| `%s` | %s | %s |\n' "${f#.github/instructions/}" "$scope_cell" "$verdict"
+  done
+  I=$(find .github/instructions -type f -name '*.md' | wc -l | tr -d ' ')
+  [ "$I" -eq 0 ] && printf '| none | — | directory exists but holds no `.md` files |\n'
+  NOWIDE=$(find .github/instructions -type f -name '*.md' | while IFS= read -r f; do
+    awk '/^---[[:space:]]*$/{c++; if(c==2) exit; next} c==1&&/^applyTo:/{print; exit}' "$f"
+  done | grep -cE '^applyTo:[[:space:]]*["'"'"']?\*\*(\/\*)?["'"'"']?[[:space:]]*$' || true)
+  if [ "${NOWIDE:-0}" -gt 0 ]; then
+    [ "$NOWIDE" -eq 1 ] && verb=claims || verb=claim
+    printf '\n> %s file(s) %s `applyTo: "**"`. That loads with every file, so it is a **second fact layer**\n' "$NOWIDE" "$verb"
+    printf '> next to `AGENTS.md`. Both are handed to the model and neither wins a conflict — the model\n'
+    printf '> decides, differently each time. Put repo-wide rules in `AGENTS.md` instead.\n'
+  fi
+fi
+
 if [ -d .github/agents ]; then
   printf '\nAgent profiles in `.github/agents/` — for each role, exactly one of them should be authoritative:\n\n'
   printf '| File | Picker name | Likely role | Note |\n| --- | --- | --- | --- |\n'

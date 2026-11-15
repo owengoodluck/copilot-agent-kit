@@ -97,6 +97,38 @@ Never `planner2`, `planner-new`, `my-planner` — at pick time those names carry
 `install.sh` prints what is already there before writing anything; `scan.sh` section 3 lists every
 agent and instruction file it found and the role each one appears to claim.
 
+## Where a rule belongs
+
+Splitting rules across files is the most common way a working setup stops working. More files is
+not more context — it is more places for the same rule to say two things.
+
+| File | Loads when | Use it for |
+| --- | --- | --- |
+| `AGENTS.md` | every request | anything true across the whole repo |
+| `.github/copilot-instructions.md` | every request | only when the repo has no `AGENTS.md` — then it *is* the fact layer |
+| `.github/instructions/NAME.instructions.md` | the work touches a file matching `applyTo` | rules that are false outside one path |
+
+Three facts decide most cases:
+
+1. **Path-specific instructions are additive.** When a repository-wide file and a matching
+   path-specific file both exist, GitHub's docs say "the instructions from both files are used".
+   Nothing overrides anything, so a contradiction is settled by the model, differently each time.
+2. **They load by file context.** A planning request that only reads and plans may touch no
+   matching file, so an invariant parked there is missing exactly when someone relies on it.
+3. **`applyTo` is mandatory.** No frontmatter, no glob, no match — the file is inert, and nothing
+   tells you.
+
+The rule in one line: **if you can name the scope as a glob narrower than `**`, it belongs in
+`instructions/`; otherwise it belongs in `AGENTS.md`.**
+
+Good: `src/db/migrations/**` — never edit an existing migration, only add. `**/*.test.ts` — no
+sleeps, no network. `packages/ui/**` — design tokens only from here.
+Bad: build commands, the directory map, dependency direction, "small PRs".
+
+`scan.sh` prints every file in `.github/instructions/` with its `applyTo`, and marks the three ways
+one can be inert or duplicative: no `applyTo`, a `**` glob, or a filename that does not end in
+`.instructions.md`.
+
 ## Adopt it: four steps, about 20 minutes
 
 **1. Scan — do not start from a blank template**

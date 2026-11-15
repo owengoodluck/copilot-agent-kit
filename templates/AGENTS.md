@@ -9,6 +9,9 @@ Do not substitute general knowledge for what is written here.
 > be executed once before you keep it.
 > **Two pages max.** If it grows past that, move detail into `docs/architecture.md` and leave a
 > one-line pointer here.
+> **Scope check.** Keep this file to what is true everywhere. A rule that is false outside one path
+> (a migrations directory, tests, one package) belongs in `.github/instructions/NAME.instructions.md`
+> with an `applyTo` glob. `applyTo: "**"` does not count — that is a second fact layer.
 
 ## What this is
 
